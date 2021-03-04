@@ -1,2 +1,2 @@
 # col0rme
-Super resolution for fluorescent microscopy
+An algortithm for Super-Resolution in Fluorescence Microscopy

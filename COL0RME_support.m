@@ -23,7 +23,7 @@ SmSm = @(x) squeeze(sum(reshape(squeeze(sum(reshape(x, [L srf N]), 2))', [N srf 
 
 % Computing Lipschitz constant 
 try
-    load([opts.folderSave 'Lipschitz_tubulin_N' num2str(N) 'b.mat'])
+    load([opts.folderSave 'Lipschitz_tubulin_N' num2str(N) '.mat'])
 catch
     if opts.GPU
         [Lip, ~] = pwritr_GPU(randn(L^2,1), Gl, 500, 1e-3);
@@ -31,7 +31,7 @@ catch
     else
         [Lip, ~] = pwritr(randn(L^2,1), Gh0, GlGl, replambdah, SmSm, 500, 1e-3);
     end
-    save([opts.folderSave 'Lipschitz_tubulin_N' num2str(N) 'b.mat'],'Lip')
+    save([opts.folderSave 'Lipschitz_tubulin_N' num2str(N) '.mat'],'Lip')
 end
 
 %% Correlation CEL0 method -- algorithm options
@@ -64,7 +64,7 @@ else
     patch = '';
 end
 
-if ~isfile([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch 'b.mat'])
+if ~isfile([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch '.mat'])
 
     % Computing covariance matrix
     Ry = cov(munfold(Ynoisy/max(Ynoisy(:)),3,[2 1]));
@@ -98,7 +98,7 @@ if ~isfile([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) pa
     sol_col0rme.Rx = reshape(sol_col0rme.Rx, [L L]);
 
     % Storing results
-    save([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch 'b'], 'col0rme', 'sol_col0rme');
+    save([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch], 'col0rme', 'sol_col0rme');
 else 
-    load([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch 'b.mat'])
+    load([opts.folderSave 'COL0RME_step1_K' num2str(opts.K) '_N' num2str(N) patch '.mat'])
 end

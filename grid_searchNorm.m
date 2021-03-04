@@ -1,4 +1,4 @@
-function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, D, Mech, is, optsGen)
+function [f_mu_range, psnr_range] = grid_searchNorm(opts, sol, range, ynew, PSFfft, D, Mech, is, optsGen)
 
     N = size(Mech,1);
     L = size(Mech,2);
@@ -16,7 +16,7 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
         
         if optsGen.BackEst==2
             lambda = opts.lambda;                       % the regularization parameter for b
-            Lipb = opts.LipI + lambda*opts.LipDb;   % Lipschitz constant for b
+            Lipb = (1/N^2)*opts.LipI + (1/N^2)*lambda*opts.LipDb;   % Lipschitz constant for b
             s = 1/Lipb;                         % step for b
         end
         
@@ -30,7 +30,7 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
             b = ones(N)*median(ynew(:)); 
         end    
         
-        Lip = opts.LipA + m*opts.LipD; % Lipschitz constant
+        Lip = (1/N^2)*opts.LipA + m*(1/L^2)*opts.LipD; % Lipschitz constant
         t = 1/Lip;
 
         % estimate x and b
@@ -49,13 +49,13 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
 
                 xfft = fft2(x);
                 MHx = Mech * real(ifft2(PSFfft .* xfft)) * MechT;
-                grad = real(ifft2(PSFconj.*fft2(MechT*(MHx - (ynew-b))*Mech))) + m*real(ifft2((D.DhT_DFT .* D.Dh_DFT + D.DvT_DFT .* D.Dv_DFT).*xfft));
+                grad = (1/N^2)*real(ifft2(PSFconj.*fft2(MechT*(MHx - (ynew-b))*Mech))) + m*(1/L^2)*real(ifft2((D.DhT_DFT .* D.Dh_DFT + D.DvT_DFT .* D.Dv_DFT).*xfft));
                 x = x-t*grad; % the gradient descent update
                 
                 % implementation of the prox (2 cases x>=0 , x<0)
                 x_tmp=x;
-                x(x_tmp>=0)=x_tmp(x_tmp>=0)./(1+opts.alpha*t*is(x_tmp>=0));     
-                x(x_tmp<0)=x_tmp(x_tmp<0)./(1+opts.alpha*t*(is(x_tmp<0)+1));    
+                x(x_tmp>=0)=x_tmp(x_tmp>=0)./(1+opts.alpha*t*(1/L^2)*is(x_tmp>=0));     
+                x(x_tmp<0)=x_tmp(x_tmp<0)./(1+opts.alpha*t*(1/L^2)*(is(x_tmp<0)+1));    
 
                 % check for convergence
                 relerr = norm(x(:) - x_p(:)) / norm(x_p(:));
@@ -90,11 +90,11 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
                     b_p = b; % keep the previous solution 
                     
                     bfft = fft2(b);
-                    grad = (MHx+b-ynew) + lambda*real(ifft2((D.DhT_DFT_b .* D.Dh_DFT_b + D.DvT_DFT_b .* D.Dv_DFT_b).*bfft));
+                    grad = (1/N^2)*(MHx+b-ynew) + lambda*(1/N^2)*real(ifft2((D.DhT_DFT_b .* D.Dh_DFT_b + D.DvT_DFT_b .* D.Dv_DFT_b).*bfft));
                     b = b-s*grad; % the gradient descent update
 
                     % implementation of the prox, only positivity constr.   
-                    b(b<0)= b(b<0)./(1+opts.alpha*s); 
+                    b(b<0)= b(b<0)./(1+opts.alpha*s*(1/N^2)); 
 
                     % check for convergence
                     relerr = norm(b(:) - b_p(:)) / norm(b_p(:));
@@ -116,7 +116,7 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
 
         xfft = fft2(x);
         data_term = Mech * real(ifft2(PSFfft .* xfft)) * MechT - (ynew-b);
-        f_mu_range(k)  = (1/2)*norm(data_term(:))^2 - (1/2)*opts.v_DP^2/optsGen.K*(N^2)*opts.est_var; % f(\mu)
+        f_mu_range(k)  = (1/2)*(1/N^2)*norm(data_term(:))^2 - (1/2)*opts.v_DP^2/optsGen.K*opts.est_var; % f(\mu)
         if optsGen.sim
             x_GT_cut = optsGen.x_GT(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
             x_cut = x(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
@@ -124,6 +124,8 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
             psnr_range(k) = 10 * log10( max(x_GT_cut(:))^2 / mse);
         end
         k = k+1;
+        figure;
+        imagesc(x)
     end    
     
     % Plots

@@ -56,7 +56,7 @@ col0rme2.maxIt = 1e4;
 col0rme2.mu_init = 0.1; % the initialization of the regularization parameter
 col0rme2.tol_f = 1e-3;
 
-col0rme2.v_DP =sqrt(500);
+col0rme2.v_DP =sqrt(opts.K);
 col0rme2.lambda = 100;
 
 if ~isfile([opts.folderSave 'COL0RME_step2_K' num2str(opts.K) '_N' num2str(N) '.mat'])

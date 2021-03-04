@@ -53,16 +53,17 @@ col0rme2.pixels_fg = pixels_fg;
 col0rme2.pixels_cg = pixels_cg;
 
 col0rme2.maxIt = 1e4;
-col0rme2.mu_init = 0.1; % the initialization of the regularization parameter
+col0rme2.mu_init = 0.1; % the initialization of the regularization parameter for intensity
 col0rme2.tol_f = 1e-3;
 
-col0rme2.v_DP =sqrt(opts.K);
-col0rme2.lambda = 100;
+col0rme2.v_DP =sqrt(opts.K); % \nu_{DP}, the parameter of discrepancy princi
+col0rme2.lambda = 100;       % the regularization parameter for the background
 
 if ~isfile([opts.folderSave 'COL0RME_step2_K' num2str(opts.K) '_N' num2str(N) '.mat'])
       
-    sol_col0rme2 = DiscrepancyPrincipleNorm(col0rme2, ynew, PSFfft, D, Mech, is, opts);
-    
+    sol_col0rme2 = DiscrepancyPrinciple(col0rme2, ynew, PSFfft, D, Mech, is, opts);
+%     sol_col0rme2 = DiscrepancyPrincipleNorm(col0rme2, ynew, PSFfft, D, Mech, is, opts); % Normalize every norm with the number of elements
+
     save([opts.folderSave 'COL0RME_step2_K' num2str(opts.K) '_N' num2str(N)], 'col0rme2', 'sol_col0rme2');
 else 
     load([opts.folderSave 'COL0RME_step2_K' num2str(opts.K) '_N' num2str(N) '.mat'])
@@ -71,5 +72,6 @@ end
 %% Grid search
 
 % Grid search
-range = 1:0.1:2;
+range = 0.01:0.02:0.21;
 [f_mu_range, psnr_range] = grid_search(col0rme2, sol_col0rme2, range, ynew, PSFfft, D, Mech, is, opts);
+% [f_mu_range, psnr_range] = grid_searchNorm(col0rme2, sol_col0rme2, range, ynew, PSFfft, D, Mech, is, opts); % Normalize every norm with the number of elements, goes with: DiscrepancyPrincipleNorm 

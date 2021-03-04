@@ -124,8 +124,6 @@ function [f_mu_range, psnr_range] = grid_searchNorm(opts, sol, range, ynew, PSFf
             psnr_range(k) = 10 * log10( max(x_GT_cut(:))^2 / mse);
         end
         k = k+1;
-        figure;
-        imagesc(x)
     end    
     
     % Plots

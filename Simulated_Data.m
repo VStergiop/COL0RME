@@ -9,7 +9,7 @@ addpath util
 opts.K = 500;               % Stack lenght
 opts.SNR = 12;              % Measurement noise SNR
 opts.GPU = 1;               % 0: CPU, 1: GPU, at the moment only CPU for 2nd step
-opts.BackEst = 2;           % 0: without Background Estimation, 
+opts.BackEst = 1;           % 0: without Background Estimation, 
                             % 1: with B.E., Back: constant in space
                             % 2: with B.E., Back: varying in space
 opts.compute = true;        % compute f/mu/b/psnr evolution for Discrepancy Principle
@@ -17,7 +17,7 @@ opts.sim = 1;               % simulated data, compute GT image and PSNR values
 opts.patches = 0;           % 0: without patches, only this option for sim. data
 
 opts.folderSave = 'Results_SimData/';   % The folder to save the result
-opts.filename = 'tubulin_noiseless_lowBg.mat'; % The filename 
+opts.filename = 'tubulin_noiseless_highBg.mat'; % The filename 
 opts.indsY = {12+(1:24), 12+(1:24)}; % the indices, in raw data
 
 save([opts.folderSave 'parameters_K' num2str(opts.K) '.mat'],'opts')

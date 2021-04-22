@@ -1,4 +1,4 @@
-function [X, Var_noise, outinfo] = corrcelo_VarN_CPU(Y, Gl, replambdah, Gh0, SmSm, Lip, q, gamma, opts)
+function [X, Var_noise, outinfo] = corrCEL0_VarN_CPU(Y, Gl, replambdah, Gh0, SmSm, Lip, q, gamma, opts)
 
 % Display options
 defopts.verbose = true;     % Verbose mode
@@ -45,7 +45,7 @@ GlGl = khatrirao(Gl,Gl);
 
 % Pre-computing contants needed for updating weights
 normsG = sum(Gl.^2); 
-normsG = [kron(normsG, normsG)];
+normsG = kron(normsG, normsG);
 normsG2 = normsG(:).^2;
 
 sq2g_div_nG   = sqrt(2*gamma) ./ normsG(:);
@@ -69,7 +69,7 @@ else
         disp('Initializing with FISTA solution (convex formulation) ...')
     end
     X = zeros(L^2, 1);
-    [X, sigb, ~] = wl1fista(Y, GlGl, replambdah, Gh0, SmSm, X, sigb, opts.b, gamma, Lip, opts.opts_fista);
+%     [X, sigb, ~] = wl1fista(Y, GlGl, replambdah, Gh0, SmSm, X, sigb, opts.b, gamma, Lip, opts.opts_fista);
     if opts.verbose    
         fval = costfncelo(Y, X, sigb, opts.b, Gh0, replambdah, SmSm, gamma, sq2g_div_nG, normsG2, abs([X(:)]) < sq2g_div_nG(:));
         fprintf('Computed initial point, cost fn value = %5.2e \n',fval);
@@ -109,12 +109,17 @@ while (it <= opts.maxit) && ~conv
     ii = abs(X(:)) < sq2g_div_nG(:);
     
     % Checking for convergence
-    relerr = norm([X(:); sigb] - [Xp(:); sigbp]) / norm([Xp(:); sigbp]);
-    if isnan(relerr)
-        relerr = norm(X(:));
+    relerr_x = norm(X(:) - Xp(:)) / norm(Xp(:));
+    relerr_b = abs(sigb - sigbp) / abs(sigbp);
+    
+    if isnan(relerr_x)
+        relerr_x = norm(X(:));
     end
-    outinfo.relerr(it) = relerr; 
-    conv = outinfo.relerr(it) < opts.tol;
+    if isnan(relerr_b)
+        relerr_b = abs(sigb);
+    end
+    outinfo.relerr(it) = relerr_x; 
+    conv = (outinfo.relerr(it) < opts.tol) & (relerr_b < opts.tol);
     
     % Computing cost fn val
     if opts.computef
@@ -127,7 +132,7 @@ while (it <= opts.maxit) && ~conv
         disp(header);
         disp(subheader);
         disp(hline);
-        strprog = sprintf(' %4d         %5.2e    %4d      ', it, relerr,length(out_x.relerr));
+        strprog = sprintf(' %4d         %5.2e    %4d      ', it, relerr_x,length(out_x.relerr));
         if opts.computef
             strprog = [strprog  sprintf('%5.2e   %5.2e    %5.2e    %5d    (%5d)', ...
                 outinfo.fval(it), err, regval, nnz(X), L2)];
@@ -264,11 +269,12 @@ while (it <= opts_fista.maxit) && ~conv
     
     v_keep = v_tmp + sigb*b;
 
-    % Checking for convergence -------------------------------------------
-    relerr = norm([X(:); sigb] - [Xp(:); sigbp]) / (norm([Xp(:); sigbp]) + eps);
-    out_x.relerr(it) = relerr; 
+    % Checking for convergence
+    relerr_x = norm(X(:) - Xp(:)) / norm(Xp(:));
+    relerr_b = abs(sigb - sigbp) / abs(sigbp);
+    out_x.relerr(it) = relerr_x; 
     % Convergence conditions: small relative error & it > 1 
-    conv = (out_x.relerr(it) < opts_fista.tol) & it > 1;
+    conv = (out_x.relerr(it) < opts_fista.tol) & (relerr_b < opts_fista.tol) & it > 1;
     
     % Computing cost fn val ----------------------------------------------
     if opts_fista.computef
@@ -283,7 +289,7 @@ while (it <= opts_fista.maxit) && ~conv
             disp(subheader);
             disp(hline);
         end
-        strprog = sprintf(' %4d         %5.2e         %5.2e    ', it, relerr, sigb * b(1,1));
+        strprog = sprintf(' %4d         %5.2e         %5.2e    ', it, relerr_x, sigb * b(1,1));
         if opts_fista.computef
             strprog = [strprog  sprintf('%7.4e   %5.2e    %5.2e    %5d    (%5d)', ...
                 out_x.fval(it), err, wxnrm, nnz(X(:)), L^2)];

@@ -20,6 +20,16 @@ g = normcdf((pixsz/srf) * ii, pixsz/(2*srf), sig) - ...
     normcdf((pixsz/srf) * (ii-1), pixsz/(2*srf), sig);    
 g = fftshift(g);
 
+% % The airy disc model of the psf
+% ll=linspace(-0.5,0,L/2+1);
+% lr=linspace(0,0.5,L/2);
+% [X,Y]=meshgrid([ll,lr(2:end)],[ll,lr(2:end)]);
+% [th,rho]=cart2pol(X,Y);
+% OTF=fftshift(1/pi*(2*acos(abs(rho)/fc)-sin(2*acos(abs(rho)/fc))).*(rho<fc));
+% psf=real(ifft2(OTF));
+% g =psf(1,:);
+% g = g/sum(g(:));
+
 % Optional normalization step
 if isnormalized
     g = g/max(abs(g));

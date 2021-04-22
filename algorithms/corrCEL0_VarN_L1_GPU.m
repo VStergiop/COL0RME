@@ -1,4 +1,4 @@
-function [X, Var_noise, outinfo] = corrcelo_VarN_GPU(Y, Gl, replambdah, Gh0, SmSm, Lip, q, gamma, opts)
+function [X, Var_noise, outinfo] = corrCEL0_VarN_L1_GPU(Y, Gl, replambdah, Gh0, SmSm, Lip, q, gamma, opts)
 
 % Display options
 defopts.verbose = true;     % Verbose mode
@@ -91,7 +91,6 @@ end
 outinfo.relerr = gpuArray(zeros(1, opts.maxit));
 
 %%%  Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 ii = abs(X(:)) < sq2g_div_nG(:);
 
 % Initializing conditions
@@ -110,12 +109,17 @@ while (it <= opts.maxit) && ~conv
     ii = abs(X(:)) < sq2g_div_nG(:);
     
     % Checking for convergence
-    relerr = norm([X(:); sigb] - [Xp(:); sigbp]) / norm([Xp(:); sigbp]);
-    if isnan(relerr)
-        relerr = norm(X(:));
+    relerr_x = norm(X(:) - Xp(:)) / norm(Xp(:));
+    relerr_b = abs(sigb - sigbp) / abs(sigbp);
+    
+    if isnan(relerr_x)
+        relerr_x = norm(X(:));
     end
-    outinfo.relerr(it) = relerr; 
-    conv = outinfo.relerr(it) < opts.tol;
+    if isnan(relerr_b)
+        relerr_b = abs(sigb);
+    end
+    outinfo.relerr(it) = relerr_x; 
+    conv = (outinfo.relerr(it) < opts.tol) & (relerr_b < opts.tol);
     
     % Computing cost fn val
     if opts.computef
@@ -128,7 +132,7 @@ while (it <= opts.maxit) && ~conv
         disp(header);
         disp(subheader);
         disp(hline);
-        strprog = sprintf(' %4d         %5.2e    %4d      ', it, relerr,length(out_x.relerr));
+        strprog = sprintf(' %4d         %5.2e    %4d      ', it, relerr_x,length(out_x.relerr));
         if opts.computef
             strprog = [strprog  sprintf('%5.2e   %5.2e    %5.2e    %5d    (%5d)', ...
                 outinfo.fval(it), err, regval, nnz(X), L2)];
@@ -212,13 +216,12 @@ t = 1;
 X = single(X);
 X = gpuArray(X);
 XX = X;
-sigbX = sigb;
 conv = false;
 it = 1;
 
 % Stage 1: kron(Gl, Gl) * Diag(rx) * kron(Gl, Gl)' + s*B
 v_keep = GlkGl.*XX';
-v_keep = v_keep*GlkGl'+ sigbX*b;
+v_keep = v_keep*GlkGl'+ sigb*b;
 % precompute a factor
 factor = ((b(:)') * b(:));
 
@@ -228,19 +231,19 @@ while (it <= opts_fista.maxit) && ~conv
 
     % Computing gradient --------------------------------------------------
     
-     % Stage 1: kron(Gl, Gl) * Diag(rx) * kron(Gl, Gl)'
-     v = v_keep;
-     
-     % Stage 2: kr(kron(Gl, Gl),kron(Gl, Gl))' * (v(:) - ry)
-     v = v(:) - Y(:);
-     v = reshape(v, [N N N N]);
-     v = munfold(v, [1 3], [2 4]);
-     grad = GlGl' * v * GlGl;
+    % Stage 1: kron(Gl, Gl) * Diag(rx) * kron(Gl, Gl)'
+    v = v_keep;
+
+    % Stage 2: kr(kron(Gl, Gl),kron(Gl, Gl))' * (v(:) - ry)
+    v = v(:) - Y(:);
+    v = reshape(v, [N N N N]);
+    v = munfold(v, [1 3], [2 4]);
+    grad = GlGl' * v * GlGl;
     
     % Performing update --------------------------------------------------
     Xp = X;
     X = proxfn(XX - step * grad(:)); 
-    
+
     % Determining whether to restart -------------------------------------
     if (XX(:) - X(:))'*(X(:) - Xp(:)) > 0
         disp('>>> restarted x <<<')
@@ -268,18 +271,15 @@ while (it <= opts_fista.maxit) && ~conv
     
     
     % --------- update sigb and keep for the next step --------------------
-    
     v_keep = v_tmp + sigb*b;
 
-    
-   
-    % Checking for convergence -------------------------------------------
-    relerr = norm([X(:); sigb] - [Xp(:); sigbp]) / (norm([Xp(:); sigbp]) + eps);
-    out_x.relerr(it) = relerr; 
+    % Checking for convergence
+    relerr_x = norm(X(:) - Xp(:)) / norm(Xp(:));
+    relerr_b = abs(sigb - sigbp) / abs(sigbp);
+    out_x.relerr(it) = relerr_x; 
     % Convergence conditions: small relative error & it > 1 
-    conv = (out_x.relerr(it) < opts_fista.tol) & it > 1;
-    
-    
+    conv = (out_x.relerr(it) < opts_fista.tol) & (relerr_b < opts_fista.tol) & it > 1;
+
     % Computing cost fn val ----------------------------------------------
     if opts_fista.computef
         [out_x.fval(it), err, wxnrm] = costfn(X);
@@ -293,7 +293,7 @@ while (it <= opts_fista.maxit) && ~conv
             disp(subheader);
             disp(hline);
         end
-        strprog = sprintf(' %4d         %5.2e         %5.2e    ', it, relerr, sigb * b(1,1));
+        strprog = sprintf(' %4d         %5.2e         %5.2e    ', it, relerr_x, sigb * b(1,1));
         if opts_fista.computef
             strprog = [strprog  sprintf('%7.4e   %5.2e    %5.2e    %5d    (%5d)', ...
                 out_x.fval(it), err, wxnrm, nnz(X(:)), L^2)];
@@ -334,6 +334,5 @@ function X = proxglnn(X, w)
 % NONNEGATIVE CASE:
 X = X - w;
 X(X(:) <0) = 0;
-
 % X(abs(X(:)) < w) = 0;
 % X = sign(X) .* (abs(X) - w);

@@ -38,7 +38,7 @@ GlGl=gpuArray(khatrirao(Gl,Gl));
 % Initial solution
 
 X = zeros(L2, 1);
-[X, sigb, ~] = wl1fista(Y, GlkGl, GlGl, X, gamma, Lip, opts.opts_fista); 
+[X] = wl1fista(Y, GlkGl, GlGl, X, gamma, Lip, opts.opts_fista); 
 if opts.verbose    
     outinfo.fval = costfn(Y, X, GlkGl, gamma);
     fprintf('Computed initial point, cost fn value = %5.2e \n',outinfo.fval);
@@ -64,7 +64,7 @@ reg = gamma*sum(abs(X0(:)));
 
 fval = 0.5 * err + reg;
 
-function [X, sigb, out_x] = wl1fista(Y, GlkGl, GlGl, X, w, Lip, opts_fista)
+function [X] = wl1fista(Y, GlkGl, GlGl, X, w, Lip, opts_fista)
 
 %%%  Initialization %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -7,6 +7,7 @@ function [sol_DiscPrinc] = DiscrepancyPrinciple(opts, ynew, PSFfft, D, Mech, is,
     MechT = Mech';
 
     % Intializations
+    sol_DiscPrinc.DP = 1;
     mu = opts.mu_init;                              % the initialization of the regularization parameter
     if optsGen.BackEst==2
         lambda = opts.lambda;                       % the regularization parameter for b
@@ -36,7 +37,7 @@ function [sol_DiscPrinc] = DiscrepancyPrinciple(opts, ynew, PSFfft, D, Mech, is,
     l = 1; 
     while  ((l<=opts.maxIt) && ~conv_f) 
 
-        if isnan(mu)
+        if mu<0 || mu>1000 || isnan(mu)
             withoutDP = true;
             
             %initialize everything
@@ -182,8 +183,8 @@ function [sol_DiscPrinc] = DiscrepancyPrinciple(opts, ynew, PSFfft, D, Mech, is,
         
         % check for convergence
         conv_f = abs(f_mu)< opts.tol_f;
-        if mod(l,50)==0
-            fprintf('Iteration:%5d    Cost:%4.1e\n',l,f_mu);
+        if optsGen.compute && mod(l,50)==0
+            fprintf('DP, Iteration:%5d    Cost:%4.1e\n',l,f_mu);
         end
         l = l+1;
     end
@@ -195,10 +196,11 @@ function [sol_DiscPrinc] = DiscrepancyPrinciple(opts, ynew, PSFfft, D, Mech, is,
     
     if withoutDP
         warning('The Discrepancy Principle does not work')
+        sol_DiscPrinc.DP =0; 
     end
     
     sol_DiscPrinc.x = x;
-    sol_DiscPrinc.mu = mu_p;
+    sol_DiscPrinc.mu = mu;
     sol_DiscPrinc.f_mu = f_mu;
     sol_DiscPrinc.b = b;
     

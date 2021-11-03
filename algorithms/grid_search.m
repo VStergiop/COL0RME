@@ -1,11 +1,13 @@
 function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, D, Mech, is, optsGen)
-
+    
     N = size(Mech,1);
     L = size(Mech,2);
     
     PSFconj = conj(PSFfft);
     MechT = Mech';
 
+    opts.pixels_fg = 12;
+    opts.pixels_cg = 3;
     
     % initializations
     k=1;
@@ -117,33 +119,32 @@ function [f_mu_range, psnr_range] = grid_search(opts, sol, range, ynew, PSFfft, 
         xfft = fft2(x);
         data_term = Mech * real(ifft2(PSFfft .* xfft)) * MechT - (ynew-b);
         f_mu_range(k)  = (1/2)*norm(data_term(:))^2 - (1/2)*opts.v_DP^2/optsGen.K*(N^2)*opts.est_var; % f(\mu)
-        if optsGen.sim
-            x_GT_cut = optsGen.x_GT(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
-            x_cut = x(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
-            mse = sum(sum((x_GT_cut - x_cut).^2))/(L^2);
-            psnr_range(k) = 10 * log10( max(x_GT_cut(:))^2 / mse);
-        end
+        x_GT_cut = optsGen.x_GT(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
+        x_cut = x(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
+        %mse = sum(sum((x_GT_cut - x_cut).^2))/(L^2);
+        psnr_range(k) = computePSNR(x_GT_cut,x_cut);% 10 * log10( max(x_GT_cut(:))^2 / mse);
         k = k+1;
     end    
     
+    int_x = sol.x(opts.pixels_fg+1:end-opts.pixels_fg,opts.pixels_fg+1:end-opts.pixels_fg);
+    sol.psnr = computePSNR(x_GT_cut,int_x);
+    
     % Plots
     figure
-    subplot 211
-    plot(range,f_mu_range,'Linewidth',3)
-    title('Grid search VS Discrepancy principle')
-    ylabel('f(\mu)')
-    xlabel('\mu')
-    hold on;
-    plot(range,zeros(size(range)),'--')
-    hold on;
-    plot(sol.mu,sol.f_mu, 'rx', 'Linewidth', 3)
-    if optsGen.sim
-        subplot 212
+%     subplot 211
+%     plot(range,f_mu_range,'Linewidth',3)
+%     title('Grid search VS Discrepancy principle')
+%     ylabel('f(\mu)')
+%     xlabel('\mu')
+%     hold on;
+%     plot(range,zeros(size(range)),'--')
+%     hold on;
+%     plot(sol.mu,sol.f_mu, 'rx', 'Linewidth', 3)
+%         subplot 212
         plot(range,psnr_range,'Linewidth',3)
         title('Grid search VS Discrepancy principle')
         ylabel('PSNR')
         xlabel('\mu')
         hold on;
         plot(sol.mu,sol.psnr, 'rx', 'Linewidth', 3)
-    end
 end

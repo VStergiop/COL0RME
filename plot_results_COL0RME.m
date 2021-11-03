@@ -1,5 +1,6 @@
-function plot_results_COL0RME(Y_cut,supp_x_cut,int_x,b,x_GT_cut, JacInd,Psnr,opts)         
+function plot_results_COL0RME(Y_cut,supp_x_cut,int_x,b,opts,x_GT_cut,JacInd,Psnr,DP,var_noise,GT_var_noise)            
     
+
     figure
     subplot 321
     imagesc(Y_cut)
@@ -33,6 +34,7 @@ function plot_results_COL0RME(Y_cut,supp_x_cut,int_x,b,x_GT_cut, JacInd,Psnr,opt
         title('Estimated background')
         colorbar
     end
-    saveas(gcf,[opts.folderSave 'COL0RME_tubulin_' opts.bg '_SNR' num2str(opts.SNR) '_K' num2str(opts.K) '_N' num2str(size(b,1)) '_' opts.reg '.fig'] )
 
 end
+
+

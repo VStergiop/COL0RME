@@ -334,5 +334,6 @@ function X = proxglnn(X, w)
 % NONNEGATIVE CASE:
 X = X - w;
 X(X(:) <0) = 0;
+% figure(100); imagesc(reshape(X,[sqrt(size(X,1)) sqrt(size(X,1))]));
 % X(abs(X(:)) < w) = 0;
 % X = sign(X) .* (abs(X) - w);

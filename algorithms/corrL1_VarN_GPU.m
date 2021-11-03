@@ -98,7 +98,7 @@ proxfn = @(x) proxglnn(x, wL);
 if opts_fista.verbose
     hline = '---(inner it)----------------------------------------------------------------';
     if opts_fista.computef
-        header = '   it          relerr        cost        err     ||X||_{1}   pixels   (grid)';
+        header = '   it          relerr       VarNoise       cost        err     ||X||_{1}   pixels   (grid)';
     else
         header = '   it          relerr          VarNoise      pixels   (grid)';
     end
@@ -123,6 +123,7 @@ v_keep = v_keep*GlkGl'+ sigb*b;
 factor = ((b(:)') * b(:));
 
 while (it <= opts_fista.maxit) && ~conv
+    
     
     % ------------------- rx minimization ---------------------------------
 
@@ -219,5 +220,6 @@ function X = proxglnn(X, w)
 % NONNEGATIVE CASE:
 X = X - w;
 X(X(:) <0) = 0;
+% figure(100); imagesc(reshape(X,[sqrt(size(X,1)) sqrt(size(X,1))]));
 % X(abs(X(:)) < w) = 0;
 % X = sign(X) .* (abs(X) - w);

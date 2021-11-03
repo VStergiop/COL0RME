@@ -82,7 +82,6 @@ end
 outinfo.relerr = gpuArray(zeros(1, opts.maxit));
 
 %%%  Main loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-stacks_discrete
 ii = abs(X(:)) < sq2g_div_nG(:);
 
 % Initializing conditions

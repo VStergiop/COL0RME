@@ -1,4 +1,4 @@
-COL0RME: Super-resolution microscopy based on sparse blinking fluorophore localization and intensity estimation
+A super-resolution method improving the spatio-temporal resolution of images acquired by common fluorescent microscopes and conventional blinking fluorophores.
  
 More details can be found in the following papers:
 

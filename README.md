@@ -1,3 +1,5 @@
+![alt text](https://github.com/VStergiop/COL0RME/blob/main/logo.png)
+
 A super-resolution method improving the spatio-temporal resolution of images acquired by common fluorescent microscopes and conventional blinking fluorophores.
  
 More details can be found in the following papers:
